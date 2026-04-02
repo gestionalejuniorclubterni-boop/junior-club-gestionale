@@ -156,8 +156,12 @@ def carica_su_drive_e_invia_email(pdf_bytes, nome_file, email_destinazione=""):
     except: return "Errore Bridge"
 
 def estrai_id_drive(url):
-    match = re.search(r'/d/([a-zA-Z0-9_-]+)', str(url))
-    return match.group(1) if match else None
+    url_str = str(url)
+    match = re.search(r'/d/([a-zA-Z0-9_-]+)', url_str)
+    if match: return match.group(1)
+    match = re.search(r'id=([a-zA-Z0-9_-]+)', url_str)
+    if match: return match.group(1)
+    return None
 
 # ==========================================
 # FUNZIONI CREAZIONE PDF
@@ -221,8 +225,16 @@ def crea_pdf_contanti(num_ric_str, data_ric, importo, chi_paga, importo_lettere,
 
 def mostra_anteprima_pdf(pdf_bytes):
     base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
-    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600" type="application/pdf" style="border: 2px solid #E2E8F0; border-radius: 12px; margin-top: 15px;"></iframe>'
-    st.markdown("### 📄 Anteprima Ricevuta")
+    # Usiamo object invece di iframe, è molto più tollerato dai browser
+    pdf_display = f'''
+        <object data="data:application/pdf;base64,{base64_pdf}" type="application/pdf" width="100%" height="600px" style="border: 2px solid #E2E8F0; border-radius: 12px; margin-top: 15px;">
+            <div style="padding: 30px; text-align: center; background: #F8FAFC; border-radius: 8px;">
+                <p style="color: #64748B; font-weight: 600;">Il tuo browser blocca l'anteprima diretta dei PDF per motivi di sicurezza.</p>
+                <p style="color: #0F172A; font-weight: 800;">Nessun problema: usa il pulsante arancione qui sotto per scaricarlo e stamparlo!</p>
+            </div>
+        </object>
+    '''
+    st.markdown("### 📄 Ricevuta Generata")
     st.markdown(pdf_display, unsafe_allow_html=True)
 
 # ------------------------------------------
@@ -316,7 +328,6 @@ if menu == "📝 Emissione Ricevuta":
                     st.success("Operazione completata con successo! Ricevuta salvata.")
                     st.cache_data.clear() 
                     
-                    # MOSTRA L'ANTEPRIMA E IL BOTTONE DI DOWNLOAD
                     mostra_anteprima_pdf(pdf_b)
                     st.download_button(
                         label="⬇️ Scarica Copia PDF",
@@ -382,13 +393,20 @@ else:
                 
                 with st.spinner("Polverizzazione in corso (Sheets + Drive)..."):
                     try:
-                        # 1. Trova ed elimina da Drive tramite lo script di Google (Bug corretto: -1 per mirare al Link!)
-                        link_drive = str(df_storico_cloud.iloc[riga_df].values[-1])
-                        file_id = estrai_id_drive(link_drive)
-                        if file_id:
-                            requests.post(URL_WEB_APP, data={"action": "delete", "fileId": file_id})
+                        # CERCA IL LINK DRIVE IN MODO INTELLIGENTE IN TUTTA LA RIGA
+                        riga_valori = df_storico_cloud.iloc[riga_df].values
+                        link_drive = None
+                        for val in riga_valori:
+                            if "drive.google.com" in str(val):
+                                link_drive = str(val)
+                                break
                         
-                        # 2. Elimina da Excel
+                        if link_drive:
+                            file_id = estrai_id_drive(link_drive)
+                            if file_id:
+                                requests.post(URL_WEB_APP, data={"action": "delete", "fileId": file_id})
+                        
+                        # Elimina da Excel
                         gc = gspread.service_account(filename='credentials.json')
                         sh = gc.open("Database_Junior_Club")
                         sh.worksheet("storico").delete_rows(riga_excel)

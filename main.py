@@ -24,12 +24,12 @@ st.components.v1.html("""
 """, height=0, width=0)
 
 # ==========================================
-# FUNZIONE DEFINITIVA PER GOOGLE (BLINDATA)
+# FUNZIONE UFFICIALE E PULITA PER GOOGLE 
 # ==========================================
 def get_gspread_client():
-    if "json_key" in st.secrets:
-        # Legge il Blocco Singolo blindato dai Secrets e lo decodifica in modo puro
-        creds_dict = json.loads(st.secrets["json_key"])
+    if "google_credentials" in st.secrets:
+        # Legge il nuovo file JSON direttamente dai Secrets in modo pulito
+        creds_dict = json.loads(st.secrets["google_credentials"])
         return gspread.service_account_from_dict(creds_dict)
     else:
         return gspread.service_account(filename='credentials.json')
@@ -241,7 +241,7 @@ def crea_pdf_contanti(num_ric_str, data_ric, importo, chi_paga, importo_lettere,
     pdf.rect(30, 60, 160, 12, style='D'); pdf.set_xy(30, 60); pdf.set_fill_color(240, 244, 248); pdf.rect(30, 60, 160, 12, style='FD')
     pdf.set_font("Courier", 'B', 14); pdf.cell(160, 12, f"  {importo_lettere}", align='L')
     pdf.set_xy(15, 80); pdf.set_font("Arial", '', 12); pdf.cell(10, 8, "Per")
-    pdf.set_font("Courier", 'B', 12); pdf.cell(175, 8, causale, border='B')
+    pdf.set_font("Courier", 'B', 12); cell_w = 175; pdf.cell(cell_w, 8, causale, border='B')
     pdf.set_xy(15, 95); pdf.set_font("Arial", 'B', 14); pdf.cell(35, 10, "TOTALE Euro")
     pdf.set_fill_color(240, 244, 248); pdf.rect(50, 95, 40, 10, style='FD'); pdf.set_xy(50, 95)
     pdf.set_font("Courier", 'B', 14); pdf.cell(40, 10, f"{importo:.2f}", align='C')

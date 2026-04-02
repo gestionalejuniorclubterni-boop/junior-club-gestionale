@@ -24,12 +24,15 @@ st.components.v1.html("""
 """, height=0, width=0)
 
 # ==========================================
-# FUNZIONE UFFICIALE E PULITA PER GOOGLE 
+# FUNZIONE INFALLIBILE PER GOOGLE DRIVE (METODO TOML)
 # ==========================================
 def get_gspread_client():
-    if "google_credentials" in st.secrets:
-        # Legge il nuovo file JSON direttamente dai Secrets in modo pulito
-        creds_dict = json.loads(st.secrets["google_credentials"])
+    if "gcp_service_account" in st.secrets:
+        # Prende direttamente i segreti di Streamlit in formato dizionario
+        creds_dict = dict(st.secrets["gcp_service_account"])
+        # Ultima sicurezza per le chiavi nel caso Streamlit modifichi gli a capo
+        if "\\n" in creds_dict["private_key"]:
+            creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
         return gspread.service_account_from_dict(creds_dict)
     else:
         return gspread.service_account(filename='credentials.json')

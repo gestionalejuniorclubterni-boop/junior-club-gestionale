@@ -1,18 +1,15 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import sqlite3
 from fpdf import FPDF
 import gspread  
 from num2words import num2words
-import io
-import os 
 import requests
 import base64
 import re
 
 # ==========================================
-# 1. CONFIGURAZIONE PAGINA
+# 1. CONFIGURAZIONE PAGINA E COLLEGAMENTO
 # ==========================================
 st.set_page_config(page_title="Junior Club Terni", layout="wide", initial_sidebar_state="expanded")
 URL_WEB_APP = "https://script.google.com/macros/s/AKfycbzzfiXAW9LspCVAKQNIMuV5Xjps7Lxg4dR4MHXGAZdDlf1YBihvy_-HffsfStuILBiO/exec"
@@ -42,7 +39,7 @@ if not st.session_state["authenticated"]:
                 st.rerun()
             else:
                 st.error("❌ Password errata!")
-    st.stop() # Ferma il caricamento di tutto il resto finché non si mette la password
+    st.stop() 
 
 # ==========================================
 # 2. DESIGN DEFINITIVO 
@@ -90,15 +87,12 @@ div[data-testid="metric-container"] div[data-testid="stMetricValue"] { color: #0
 .stTabs [data-baseweb="tab"] { background-color: transparent; padding: 12px 20px; font-weight: 800; color: #64748B; border: none; font-size: 16px; }
 .stTabs [aria-selected="true"] { color: #FF6501 !important; border-bottom: 4px solid #FF6501 !important; }
 [data-testid="stDataFrame"] { border-radius: 12px !important; border: 1px solid #E2E8F0 !important; overflow: hidden !important; background: #FFFFFF; }
-.ricevuta-stampabile { background: #FFFFFF; border: 1px dashed #CBD5E1; padding: 50px; max-width: 850px; margin: 40px auto; font-family: 'Courier New', monospace; color: #0F172A; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.08); border-radius: 12px; position: relative; }
-.ricevuta-stampabile::before { content: ''; position: absolute; top: -1px; left: -1px; right: -1px; height: 8px; background: repeating-linear-gradient(45deg, #FF6501, #FF6501 10px, #E65A00 10px, #E65A00 20px); border-radius: 12px 12px 0 0; }
 [data-testid="stWidgetLabel"] p { font-weight: 800 !important; color: #0F172A !important; font-size: 15px !important;}
-@media print { body * { visibility: hidden; } .ricevuta-stampabile, .ricevuta-stampabile * { visibility: visible; } .ricevuta-stampabile { position: absolute; left: 0; top: 0; width: 100%; border: none !important; box-shadow: none !important; } .stButton, .stAlert, iframe, .stDownloadButton, [data-testid="stSidebar"] { display: none !important; } }
 </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. INTERFACCIA
+# 3. NAVIGAZIONE INTERFACCIA
 # ==========================================
 st.sidebar.markdown("<div translate='no' class='notranslate sidebar-title'>JUNIOR CLUB TERNI</div>", unsafe_allow_html=True)
 menu = st.sidebar.radio("Navigazione", ["📝 Emissione Ricevuta", "👥 Anagrafica Clienti", "📊 Storico Pagamenti"], label_visibility="collapsed")
@@ -115,7 +109,7 @@ else:
     st.markdown("<div translate='no' class='titolo-app notranslate'>Storico Pagamenti</div><div translate='no' class='sottotitolo notranslate'>Reportistica e riepilogo incassi</div>", unsafe_allow_html=True)
 
 # ==========================================
-# CARICAMENTO DATI
+# FUNZIONI DI GESTIONE E DATABASE
 # ==========================================
 @st.cache_data(ttl=3600, show_spinner="Sincronizzazione dal Cloud in corso... ⚡")
 def carica_fogli_google():
@@ -165,7 +159,9 @@ def estrai_id_drive(url):
     match = re.search(r'/d/([a-zA-Z0-9_-]+)', str(url))
     return match.group(1) if match else None
 
-# Funzioni di stampa PDF omesse per brevità in risposta, usiamo le stesse
+# ==========================================
+# FUNZIONI CREAZIONE PDF
+# ==========================================
 def crea_pdf_pos(num_ric_str, data_ric, importo, chi_paga, cf_pagante, importo_lettere, causale, nome_allievo, nascita_allievo, indirizzo_allievo, testo_firma):
     pdf = FPDF(orientation='P', unit='mm', format='A4')
     pdf.add_page(); pdf.rect(10, 10, 190, 140)
@@ -222,6 +218,12 @@ def crea_pdf_contanti(num_ric_str, data_ric, importo, chi_paga, importo_lettere,
     pdf.set_xy(125, 95); pdf.set_font("Arial", '', 10); pdf.cell(65, 5, "Firma", align='C')
     pdf.set_xy(125, 105); pdf.set_font("Courier", 'B', 10); pdf.cell(65, 5, testo_firma, border='T', align='C')
     return pdf.output(dest='S').encode('latin-1', 'replace')
+
+def mostra_anteprima_pdf(pdf_bytes):
+    base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
+    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600" type="application/pdf" style="border: 2px solid #E2E8F0; border-radius: 12px; margin-top: 15px;"></iframe>'
+    st.markdown("### 📄 Anteprima Ricevuta")
+    st.markdown(pdf_display, unsafe_allow_html=True)
 
 # ------------------------------------------
 # SEZIONE 1: EMISSIONE RICEVUTA
@@ -311,8 +313,19 @@ if menu == "📝 Emissione Ricevuta":
                     gc = gspread.service_account(filename='credentials.json')
                     sh = gc.open("Database_Junior_Club")
                     sh.worksheet("storico").append_row([dt, str(n_ric), tipo_key, str(val), pag.upper(), cf_p.upper(), cau.upper(), atl_n.upper(), atl_na.upper(), atl_in.upper(), firm, email_invio, link_d])
-                    st.success("Operazione completata con successo!")
+                    st.success("Operazione completata con successo! Ricevuta salvata.")
                     st.cache_data.clear() 
+                    
+                    # MOSTRA L'ANTEPRIMA E IL BOTTONE DI DOWNLOAD
+                    mostra_anteprima_pdf(pdf_b)
+                    st.download_button(
+                        label="⬇️ Scarica Copia PDF",
+                        data=pdf_b,
+                        file_name=f_name,
+                        mime="application/pdf",
+                        use_container_width=True
+                    )
+                    
                 except Exception as e: st.error(f"Errore Google Sheets: {e}")
 
 # ------------------------------------------
@@ -369,8 +382,8 @@ else:
                 
                 with st.spinner("Polverizzazione in corso (Sheets + Drive)..."):
                     try:
-                        # 1. Trova ed elimina da Drive tramite lo script di Google
-                        link_drive = str(df_storico_cloud.iloc[riga_df].values[-2]) # Penultima colonna
+                        # 1. Trova ed elimina da Drive tramite lo script di Google (Bug corretto: -1 per mirare al Link!)
+                        link_drive = str(df_storico_cloud.iloc[riga_df].values[-1])
                         file_id = estrai_id_drive(link_drive)
                         if file_id:
                             requests.post(URL_WEB_APP, data={"action": "delete", "fileId": file_id})

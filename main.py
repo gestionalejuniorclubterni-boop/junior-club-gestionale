@@ -36,7 +36,7 @@ def get_gspread_client():
         return gspread.service_account(filename='credentials.json')
 
 # ==========================================
-# 1.5 SISTEMA DI LOGIN (DESIGN PREMIUM & INVIO TASTIERA)
+# 1.5 SISTEMA DI LOGIN (DESIGN PREMIUM & PULITO)
 # ==========================================
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
@@ -48,10 +48,19 @@ if not st.session_state["authenticated"]:
     [data-testid="stHeader"] { display: none !important; }
     .login-title { color: #0F172A; font-size: 38px; font-weight: 900; letter-spacing: -1.5px; margin-bottom: 5px; text-align: center; font-family: 'Inter', sans-serif;}
     .login-subtitle { color: #FF6501; font-size: 14px; font-weight: 800; text-align: center; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px;}
+    
     [data-testid="stForm"] { background-color: #FFFFFF !important; border-radius: 24px !important; border: 1px solid #E2E8F0 !important; border-top: 8px solid #FF6501 !important; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.08) !important; padding: 40px 30px !important; }
-    .stTextInput input { text-align: center !important; font-size: 22px !important; letter-spacing: 4px; border-radius: 12px !important; border: 2px solid #E2E8F0 !important; padding: 15px !important;}
-    .stTextInput input:focus { border-color: #FF6501 !important; box-shadow: 0 0 0 4px rgba(255, 101, 1, 0.15) !important; }
-    [data-testid="stFormSubmitButton"] button { background: linear-gradient(135deg, #FF6501 0%, #E65A00 100%) !important; color: white !important; border: none !important; border-radius: 12px !important; padding: 12px !important; font-size: 18px !important; font-weight: 900 !important; margin-top: 20px !important; box-shadow: 0 8px 20px -5px rgba(255, 101, 1, 0.4) !important; transition: all 0.3s ease !important; width: 100%;}
+    
+    /* SISTEMAZIONE CAMPO PASSWORD E OCCHIO */
+    [data-testid="stForm"] div[data-baseweb="input"] { border-radius: 12px !important; border: 2px solid #E2E8F0 !important; background-color: #F8FAFC !important; transition: all 0.2s ease; padding-right: 10px !important; }
+    [data-testid="stForm"] div[data-baseweb="input"]:focus-within { border-color: #FF6501 !important; box-shadow: 0 0 0 4px rgba(255, 101, 1, 0.15) !important; background-color: #FFFFFF !important; }
+    [data-testid="stForm"] input { text-align: center !important; font-size: 22px !important; letter-spacing: 4px; padding: 15px !important; font-weight: 700 !important; color: #0F172A !important; }
+    
+    /* RIMOZIONE DELLA SCRITTA "PRESS ENTER TO SUBMIT" CHE SI SOVRAPPONEVA */
+    div[data-testid="InputInstructions"] { display: none !important; }
+    .st-emotion-cache-12w0qpk { display: none !important; }
+    
+    [data-testid="stFormSubmitButton"] button { background: linear-gradient(135deg, #FF6501 0%, #E65A00 100%) !important; color: white !important; border: none !important; border-radius: 12px !important; padding: 12px !important; font-size: 18px !important; font-weight: 900 !important; margin-top: 15px !important; box-shadow: 0 8px 20px -5px rgba(255, 101, 1, 0.4) !important; transition: all 0.3s ease !important; width: 100%;}
     [data-testid="stFormSubmitButton"] button:hover { transform: translateY(-3px); box-shadow: 0 15px 30px -5px rgba(255, 101, 1, 0.5) !important; }
     </style>
     """, unsafe_allow_html=True)
@@ -62,7 +71,7 @@ if not st.session_state["authenticated"]:
         st.markdown('<div class="login-title">🎾 JUNIOR CLUB</div><div class="login-subtitle">Gestione Staff</div>', unsafe_allow_html=True)
         
         with st.form(key='login_form'):
-            pwd = st.text_input("Password", type="password", placeholder="🔑 Inserisci Password...", label_visibility="collapsed")
+            pwd = st.text_input("Password", type="password", placeholder="Inserisci password...", label_visibility="collapsed")
             submit_button = st.form_submit_button("ACCEDI")
             
             if submit_button:

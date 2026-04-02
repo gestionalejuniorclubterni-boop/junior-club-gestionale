@@ -7,12 +7,13 @@ from num2words import num2words
 import requests
 import base64
 import re
+import json
 
 # ==========================================
 # 1. CONFIGURAZIONE PAGINA E COLLEGAMENTO
 # ==========================================
 st.set_page_config(page_title="Junior Club Terni", layout="wide", initial_sidebar_state="expanded")
-URL_WEB_APP = "https://script.google.com/macros/s/AKfycbwP8if8l0wZ6OuhQxnPVsLu33F23RzLYp7LsKrnbB8WXhEYkh3Wjx63JeFmyVKDOr4/exec"
+URL_WEB_APP = "https://script.google.com/macros/s/AKfycbzzfiXAW9LspCVAKQNIMuV5Xjps7Lxg4dR4MHXGAZdDlf1YBihvy_-HffsfStuILBiO/exec"
 
 st.components.v1.html("""
     <script>
@@ -23,26 +24,50 @@ st.components.v1.html("""
 """, height=0, width=0)
 
 # ==========================================
-# 1.5 SISTEMA DI LOGIN (PASSWORD)
+# FUNZIONE INTELLIGENTE PER GOOGLE DRIVE
+# ==========================================
+def get_gspread_client():
+    if "google_credentials" in st.secrets:
+        creds_dict = json.loads(st.secrets["google_credentials"])
+        return gspread.service_account_from_dict(creds_dict)
+    else:
+        return gspread.service_account(filename='credentials.json')
+
+# ==========================================
+# 1.5 SISTEMA DI LOGIN (DESIGN BELLISSIMO)
 # ==========================================
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 
 if not st.session_state["authenticated"]:
-    st.markdown("<br><br><br><h2 style='text-align: center; color: #0F172A; font-family: sans-serif;'>🔒 Accesso Riservato Junior Club</h2>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 1, 1])
+    st.markdown("""
+    <style>
+    .stApp { background-color: #F8FAFC !important; }
+    [data-testid="stHeader"] { display: none !important; }
+    .login-header { text-align: center; margin-top: 15vh; margin-bottom: 25px; }
+    .login-title { color: #0F172A; font-size: 36px; font-weight: 900; letter-spacing: -1px; margin-bottom: 5px; font-family: 'Inter', sans-serif;}
+    .login-subtitle { color: #64748B; font-size: 16px; font-weight: 600; }
+    [data-testid="stVerticalBlockBorderWrapper"] { background-color: #FFFFFF !important; border-radius: 20px !important; border-top: 6px solid #FF6501 !important; box-shadow: 0 10px 40px -10px rgba(0,0,0,0.1) !important; padding: 40px !important; }
+    .stTextInput input { text-align: center !important; font-size: 18px !important; letter-spacing: 2px; }
+    button[kind="primary"] { background: linear-gradient(135deg, #FF6501 0%, #E65A00 100%) !important; border-radius: 12px !important; padding: 15px !important; font-size: 18px !important; font-weight: 900 !important; margin-top: 15px !important; box-shadow: 0 8px 20px -5px rgba(255, 101, 1, 0.4) !important;}
+    </style>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 1.2, 1])
     with col2:
-        pwd = st.text_input("Inserisci la password", type="password")
-        if st.button("Accedi", type="primary", use_container_width=True):
-            if pwd == "admin":
-                st.session_state["authenticated"] = True
-                st.rerun()
-            else:
-                st.error("❌ Password errata!")
+        st.markdown('<div class="login-header"><div class="login-title">JUNIOR CLUB TERNI</div><div class="login-subtitle">🔒 Area Riservata Staff</div></div>', unsafe_allow_html=True)
+        with st.container(border=True):
+            pwd = st.text_input("Password", type="password", placeholder="Inserisci la password...", label_visibility="collapsed")
+            if st.button("ACCEDI AL GESTIONALE", type="primary", use_container_width=True):
+                if pwd == "admin":
+                    st.session_state["authenticated"] = True
+                    st.rerun()
+                else:
+                    st.error("❌ Password errata!")
     st.stop() 
 
 # ==========================================
-# 2. DESIGN DEFINITIVO 
+# 2. DESIGN DEFINITIVO DELL'APP
 # ==========================================
 st.markdown("""
 <style>
@@ -66,10 +91,10 @@ st.markdown("""
 [data-testid="stSidebar"] button:hover { background-color: rgba(0,0,0,0.3) !important; }
 .titolo-app { color: #0F172A; font-size: 32px; font-weight: 900; letter-spacing: -1px; margin-bottom: 0px; padding-top: 0px; line-height: 1.2; }
 .sottotitolo { color: #64748B; font-size: 15px; font-weight: 600; margin-bottom: 12px; margin-top: 4px;}
-[data-testid="stVerticalBlockBorderWrapper"] { background-color: #FFFFFF !important; border-radius: 16px !important; border: 1px solid #E2E8F0 !important; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.08) !important; padding: 30px 45px !important; margin-bottom: 1rem !important; }
+[data-testid="stVerticalBlockBorderWrapper"] { background-color: #FFFFFF !important; border-radius: 16px !important; border: 1px solid #E2E8F0 !important; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.08) !important; padding: 30px 45px !important; margin-bottom: 1rem !important; border-top: none !important; }
 .section-header { font-size: 14px; font-weight: 800; color: #1E293B; text-transform: uppercase; letter-spacing: 1px; margin-top: 20px; margin-bottom: 15px; padding: 10px 15px; background-color: #F8FAFC; border-radius: 8px; border-left: 5px solid #FF6501; display: flex; align-items: center; }
 .section-header i { margin-right: 12px; font-style: normal; font-size: 18px; color: #FF6501; }
-.stTextInput>div>div>input, .stNumberInput>div>div>input, .stSelectbox div[data-baseweb="select"] { background-color: #FFFFFF !important; border: 2px solid #E2E8F0 !important; border-radius: 10px !important; padding: 14px 16px !important; font-size: 16px !important; font-weight: 700 !important; color: #0F172A !important; box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important; transition: all 0.2s ease !important; }
+.stTextInput>div>div>input, .stNumberInput>div>div>input, .stSelectbox div[data-baseweb="select"] { background-color: #FFFFFF !important; border: 2px solid #E2E8F0 !important; border-radius: 10px !important; padding: 14px 16px !important; font-size: 16px !important; font-weight: 700 !important; color: #0F172A !important; box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important; transition: all 0.2s ease !important; text-align: left !important; letter-spacing: normal;}
 .stTextInput>div>div>input:focus, .stNumberInput>div>div>input:focus, .stSelectbox div[data-baseweb="select"]:focus-within { border-color: #FF6501 !important; box-shadow: 0 0 0 4px rgba(255, 101, 1, 0.15) !important; }
 .stTextInput label, .stNumberInput label, .stSelectbox label { color: #475569 !important; font-size: 13px !important; font-weight: 800 !important; text-transform: uppercase; margin-bottom: 8px !important; }
 .main div[role="radiogroup"] { background-color: #FFFFFF !important; padding: 6px !important; border-radius: 12px !important; display: inline-flex !important; gap: 8px; margin-bottom: 10px; border: 1px solid #E2E8F0; box-shadow: 0 4px 15px rgba(0,0,0,0.03);}
@@ -116,7 +141,7 @@ def carica_fogli_google():
     df_s = pd.DataFrame()
     df_h = pd.DataFrame()
     try:
-        gc = gspread.service_account(filename='credentials.json')
+        gc = get_gspread_client()
         sh = gc.open("Database_Junior_Club")
         
         ws_soci = sh.worksheet("soci")
@@ -225,7 +250,6 @@ def crea_pdf_contanti(num_ric_str, data_ric, importo, chi_paga, importo_lettere,
 
 def mostra_anteprima_pdf(pdf_bytes):
     base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
-    # Usiamo object invece di iframe, è molto più tollerato dai browser
     pdf_display = f'''
         <object data="data:application/pdf;base64,{base64_pdf}" type="application/pdf" width="100%" height="600px" style="border: 2px solid #E2E8F0; border-radius: 12px; margin-top: 15px;">
             <div style="padding: 30px; text-align: center; background: #F8FAFC; border-radius: 8px;">
@@ -322,7 +346,7 @@ if menu == "📝 Emissione Ricevuta":
                 link_d = carica_su_drive_e_invia_email(pdf_b, f_name, email_invio)
                 
                 try:
-                    gc = gspread.service_account(filename='credentials.json')
+                    gc = get_gspread_client()
                     sh = gc.open("Database_Junior_Club")
                     sh.worksheet("storico").append_row([dt, str(n_ric), tipo_key, str(val), pag.upper(), cf_p.upper(), cau.upper(), atl_n.upper(), atl_na.upper(), atl_in.upper(), firm, email_invio, link_d])
                     st.success("Operazione completata con successo! Ricevuta salvata.")
@@ -355,7 +379,7 @@ elif menu == "👥 Anagrafica Clienti":
             ema = st.text_input("Email")
             if st.button("Registra in Anagrafica", type="primary"):
                 try:
-                    gc = gspread.service_account(filename='credentials.json')
+                    gc = get_gspread_client()
                     sh = gc.open("Database_Junior_Club")
                     sh.worksheet("soci").append_row([n.upper(), nas.upper(), ind.upper(), gen.upper(), cf.upper(), ema.lower()])
                     st.success("Socio aggiunto correttamente!")
@@ -393,7 +417,6 @@ else:
                 
                 with st.spinner("Polverizzazione in corso (Sheets + Drive)..."):
                     try:
-                        # CERCA IL LINK DRIVE IN MODO INTELLIGENTE IN TUTTA LA RIGA
                         riga_valori = df_storico_cloud.iloc[riga_df].values
                         link_drive = None
                         for val in riga_valori:
@@ -406,8 +429,7 @@ else:
                             if file_id:
                                 requests.post(URL_WEB_APP, data={"action": "delete", "fileId": file_id})
                         
-                        # Elimina da Excel
-                        gc = gspread.service_account(filename='credentials.json')
+                        gc = get_gspread_client()
                         sh = gc.open("Database_Junior_Club")
                         sh.worksheet("storico").delete_rows(riga_excel)
                         

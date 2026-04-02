@@ -8,7 +8,6 @@ import requests
 import base64
 import re
 import json
-import os
 
 # ==========================================
 # 1. CONFIGURAZIONE PAGINA E COLLEGAMENTO
@@ -25,21 +24,20 @@ st.components.v1.html("""
 """, height=0, width=0)
 
 # ==========================================
-# FUNZIONE DEL FILE FANTASMA (INFALLIBILE AL 100%)
+# FUNZIONE BLINDATA PER GOOGLE
 # ==========================================
 def get_gspread_client():
     if "google_json" in st.secrets:
-        # Crea un file fisico sul server di Streamlit con dentro il JSON puro
-        with open("temp_credentials.json", "w", encoding="utf-8") as f:
-            f.write(st.secrets["google_json"])
-        
-        # Legge il file esattamente come facevi sul tuo computer all'inizio!
-        return gspread.service_account(filename="temp_credentials.json")
+        creds_dict = json.loads(st.secrets["google_json"], strict=False)
+        # Forza la pulizia della chiave, distruggendo i capricci di Streamlit
+        if "\\n" in creds_dict.get("private_key", ""):
+            creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+        return gspread.service_account_from_dict(creds_dict)
     else:
         return gspread.service_account(filename='credentials.json')
 
 # ==========================================
-# 1.5 SISTEMA DI LOGIN (DESIGN BELLISSIMO)
+# 1.5 SISTEMA DI LOGIN 
 # ==========================================
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False

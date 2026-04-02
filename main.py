@@ -8,6 +8,7 @@ import requests
 import base64
 import re
 import json
+import os
 
 # ==========================================
 # 1. CONFIGURAZIONE PAGINA E COLLEGAMENTO
@@ -24,20 +25,21 @@ st.components.v1.html("""
 """, height=0, width=0)
 
 # ==========================================
-# FUNZIONE BLINDATA PER GOOGLE
+# FUNZIONE DEL FILE FANTASMA (INFALLIBILE AL 100%)
 # ==========================================
 def get_gspread_client():
     if "google_json" in st.secrets:
-        creds_dict = json.loads(st.secrets["google_json"], strict=False)
-        # Forza la pulizia della chiave, distruggendo i capricci di Streamlit
-        if "\\n" in creds_dict.get("private_key", ""):
-            creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-        return gspread.service_account_from_dict(creds_dict)
+        # Crea un file fisico sul server di Streamlit con dentro il JSON puro
+        with open("temp_credentials.json", "w", encoding="utf-8") as f:
+            f.write(st.secrets["google_json"])
+        
+        # Legge il file esattamente come facevi sul tuo computer all'inizio!
+        return gspread.service_account(filename="temp_credentials.json")
     else:
         return gspread.service_account(filename='credentials.json')
 
 # ==========================================
-# 1.5 SISTEMA DI LOGIN 
+# 1.5 SISTEMA DI LOGIN (DESIGN PREMIUM & INVIO TASTIERA)
 # ==========================================
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
@@ -47,21 +49,28 @@ if not st.session_state["authenticated"]:
     <style>
     .stApp { background-color: #F8FAFC !important; }
     [data-testid="stHeader"] { display: none !important; }
-    .login-header { text-align: center; margin-top: 15vh; margin-bottom: 25px; }
-    .login-title { color: #0F172A; font-size: 36px; font-weight: 900; letter-spacing: -1px; margin-bottom: 5px; font-family: 'Inter', sans-serif;}
-    .login-subtitle { color: #64748B; font-size: 16px; font-weight: 600; }
-    [data-testid="stVerticalBlockBorderWrapper"] { background-color: #FFFFFF !important; border-radius: 20px !important; border-top: 6px solid #FF6501 !important; box-shadow: 0 10px 40px -10px rgba(0,0,0,0.1) !important; padding: 40px !important; }
-    .stTextInput input { text-align: center !important; font-size: 18px !important; letter-spacing: 2px; }
-    button[kind="primary"] { background: linear-gradient(135deg, #FF6501 0%, #E65A00 100%) !important; border-radius: 12px !important; padding: 15px !important; font-size: 18px !important; font-weight: 900 !important; margin-top: 15px !important; box-shadow: 0 8px 20px -5px rgba(255, 101, 1, 0.4) !important;}
+    .login-title { color: #0F172A; font-size: 38px; font-weight: 900; letter-spacing: -1.5px; margin-bottom: 5px; text-align: center; font-family: 'Inter', sans-serif;}
+    .login-subtitle { color: #FF6501; font-size: 14px; font-weight: 800; text-align: center; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px;}
+    [data-testid="stForm"] { background-color: #FFFFFF !important; border-radius: 24px !important; border: 1px solid #E2E8F0 !important; border-top: 8px solid #FF6501 !important; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.08) !important; padding: 40px 30px !important; }
+    .stTextInput input { text-align: center !important; font-size: 22px !important; letter-spacing: 4px; border-radius: 12px !important; border: 2px solid #E2E8F0 !important; padding: 15px !important;}
+    .stTextInput input:focus { border-color: #FF6501 !important; box-shadow: 0 0 0 4px rgba(255, 101, 1, 0.15) !important; }
+    [data-testid="stFormSubmitButton"] button { background: linear-gradient(135deg, #FF6501 0%, #E65A00 100%) !important; color: white !important; border: none !important; border-radius: 12px !important; padding: 12px !important; font-size: 18px !important; font-weight: 900 !important; margin-top: 20px !important; box-shadow: 0 8px 20px -5px rgba(255, 101, 1, 0.4) !important; transition: all 0.3s ease !important; width: 100%;}
+    [data-testid="stFormSubmitButton"] button:hover { transform: translateY(-3px); box-shadow: 0 15px 30px -5px rgba(255, 101, 1, 0.5) !important; }
     </style>
     """, unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns([1, 1.2, 1])
+    # Colonne sistemate per avere un riquadro centrale più elegante e non troppo largo
+    col1, col2, col3 = st.columns([1.5, 1.2, 1.5])
     with col2:
-        st.markdown('<div class="login-header"><div class="login-title">JUNIOR CLUB TERNI</div><div class="login-subtitle">🔒 Area Riservata Staff</div></div>', unsafe_allow_html=True)
-        with st.container(border=True):
-            pwd = st.text_input("Password", type="password", placeholder="Inserisci la password...", label_visibility="collapsed")
-            if st.button("ACCEDI AL GESTIONALE", type="primary", use_container_width=True):
+        st.markdown('<div style="margin-top: 15vh;"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="login-title">🎾 JUNIOR CLUB</div><div class="login-subtitle">Gestione Staff</div>', unsafe_allow_html=True)
+        
+        # Il modulo (Form) permette di usare il tasto Invio (Enter)
+        with st.form(key='login_form'):
+            pwd = st.text_input("Password", type="password", placeholder="🔑 Inserisci Password...", label_visibility="collapsed")
+            submit_button = st.form_submit_button("ACCEDI")
+            
+            if submit_button:
                 if pwd == "admin":
                     st.session_state["authenticated"] = True
                     st.rerun()

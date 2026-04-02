@@ -8,6 +8,7 @@ import requests
 import base64
 import re
 import json
+import os
 
 # ==========================================
 # 1. CONFIGURAZIONE PAGINA E COLLEGAMENTO
@@ -24,15 +25,14 @@ st.components.v1.html("""
 """, height=0, width=0)
 
 # ==========================================
-# FUNZIONE INTELLIGENTE PER GOOGLE DRIVE (RIPARATA)
+# FUNZIONE INFALLIBILE PER GOOGLE DRIVE
 # ==========================================
 def get_gspread_client():
     if "google_credentials" in st.secrets:
-        creds_dict = json.loads(st.secrets["google_credentials"], strict=False)
-        # IL TRUCCO MAGICO: Ripara gli "a capo" rotti da Streamlit
-        if "\\n" in creds_dict.get("private_key", ""):
-            creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-        return gspread.service_account_from_dict(creds_dict)
+        # TRUCCO DEL FILE FANTASMA: Creiamo un file temporaneo perfetto così Google non fa capricci
+        with open("temp_creds.json", "w", encoding="utf-8") as f:
+            f.write(st.secrets["google_credentials"])
+        return gspread.service_account(filename="temp_creds.json")
     else:
         return gspread.service_account(filename='credentials.json')
 

@@ -23,14 +23,23 @@ st.components.v1.html("""
 """, height=0, width=0)
 
 # ==========================================
-# FUNZIONE INFALLIBILE PER GOOGLE DRIVE (METODO TOML)
+# FUNZIONE INFALLIBILE PER GOOGLE DRIVE (METODO MANUALE)
 # ==========================================
 def get_gspread_client():
     if "gcp_service_account" in st.secrets:
-        # Prende direttamente i segreti di Streamlit e li trasforma in un dizionario! Niente JSON!
-        creds_dict = dict(st.secrets["gcp_service_account"])
-        # Ultima sicurezza per le chiavi: forza la correzione degli a capo
-        creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+        # Costruisce il dizionario a mano, eliminando per sempre il problema del JSON
+        creds_dict = {
+            "type": st.secrets.gcp_service_account.type,
+            "project_id": st.secrets.gcp_service_account.project_id,
+            "private_key_id": st.secrets.gcp_service_account.private_key_id,
+            "private_key": st.secrets.gcp_service_account.private_key,
+            "client_email": st.secrets.gcp_service_account.client_email,
+            "client_id": st.secrets.gcp_service_account.client_id,
+            "auth_uri": st.secrets.gcp_service_account.auth_uri,
+            "token_uri": st.secrets.gcp_service_account.token_uri,
+            "auth_provider_x509_cert_url": st.secrets.gcp_service_account.auth_provider_x509_cert_url,
+            "client_x509_cert_url": st.secrets.gcp_service_account.client_x509_cert_url
+        }
         return gspread.service_account_from_dict(creds_dict)
     else:
         return gspread.service_account(filename='credentials.json')

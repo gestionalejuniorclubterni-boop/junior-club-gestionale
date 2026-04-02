@@ -8,6 +8,7 @@ import requests
 import base64
 import re
 import json
+import os
 
 # ==========================================
 # 1. CONFIGURAZIONE PAGINA E COLLEGAMENTO
@@ -24,16 +25,16 @@ st.components.v1.html("""
 """, height=0, width=0)
 
 # ==========================================
-# FUNZIONE INFALLIBILE PER GOOGLE DRIVE (METODO TOML)
+# FUNZIONE DEL FILE FANTASMA (INFALLIBILE AL 100%)
 # ==========================================
 def get_gspread_client():
-    if "gcp_service_account" in st.secrets:
-        # Prende direttamente i segreti di Streamlit in formato dizionario
-        creds_dict = dict(st.secrets["gcp_service_account"])
-        # Ultima sicurezza per le chiavi nel caso Streamlit modifichi gli a capo
-        if "\\n" in creds_dict["private_key"]:
-            creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-        return gspread.service_account_from_dict(creds_dict)
+    if "google_json" in st.secrets:
+        # Crea un file fisico sul server di Streamlit con dentro il JSON puro
+        with open("temp_credentials.json", "w", encoding="utf-8") as f:
+            f.write(st.secrets["google_json"])
+        
+        # Legge il file esattamente come facevi sul tuo computer all'inizio!
+        return gspread.service_account(filename="temp_credentials.json")
     else:
         return gspread.service_account(filename='credentials.json')
 

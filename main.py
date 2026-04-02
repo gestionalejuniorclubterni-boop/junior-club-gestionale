@@ -29,11 +29,8 @@ st.components.v1.html("""
 # ==========================================
 def get_gspread_client():
     if "google_json" in st.secrets:
-        # Crea un file fisico sul server di Streamlit con dentro il JSON puro
         with open("temp_credentials.json", "w", encoding="utf-8") as f:
             f.write(st.secrets["google_json"])
-        
-        # Legge il file esattamente come facevi sul tuo computer all'inizio!
         return gspread.service_account(filename="temp_credentials.json")
     else:
         return gspread.service_account(filename='credentials.json')
@@ -59,13 +56,11 @@ if not st.session_state["authenticated"]:
     </style>
     """, unsafe_allow_html=True)
     
-    # Colonne sistemate per avere un riquadro centrale più elegante e non troppo largo
     col1, col2, col3 = st.columns([1.5, 1.2, 1.5])
     with col2:
         st.markdown('<div style="margin-top: 15vh;"></div>', unsafe_allow_html=True)
         st.markdown('<div class="login-title">🎾 JUNIOR CLUB</div><div class="login-subtitle">Gestione Staff</div>', unsafe_allow_html=True)
         
-        # Il modulo (Form) permette di usare il tasto Invio (Enter)
         with st.form(key='login_form'):
             pwd = st.text_input("Password", type="password", placeholder="🔑 Inserisci Password...", label_visibility="collapsed")
             submit_button = st.form_submit_button("ACCEDI")
@@ -398,7 +393,10 @@ elif menu == "👥 Anagrafica Clienti":
                     st.cache_data.clear()
                 except Exception as e: st.error(f"Errore: {e}")
     with tab2:
-        st.dataframe(df_soci_cloud, use_container_width=True, height=550) if not df_soci_cloud.empty else st.info("Archivio vuoto.")
+        if not df_soci_cloud.empty:
+            st.dataframe(df_soci_cloud, use_container_width=True, height=550)
+        else:
+            st.info("Archivio vuoto.")
 
 # ------------------------------------------
 # SEZIONE 3: STORICO E CANCELLAZIONE

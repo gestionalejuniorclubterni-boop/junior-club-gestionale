@@ -8,7 +8,6 @@ import requests
 import base64
 import re
 import json
-import os
 
 # ==========================================
 # 1. CONFIGURAZIONE PAGINA E COLLEGAMENTO
@@ -25,14 +24,22 @@ st.components.v1.html("""
 """, height=0, width=0)
 
 # ==========================================
-# FUNZIONE INFALLIBILE PER GOOGLE DRIVE
+# FUNZIONE INFALLIBILE PER GOOGLE DRIVE (IL BAZOOKA)
 # ==========================================
 def get_gspread_client():
     if "google_credentials" in st.secrets:
-        # TRUCCO DEL FILE FANTASMA: Creiamo un file temporaneo perfetto così Google non fa capricci
-        with open("temp_creds.json", "w", encoding="utf-8") as f:
-            f.write(st.secrets["google_credentials"])
-        return gspread.service_account(filename="temp_creds.json")
+        # Leggiamo il testo dai Secrets
+        raw_text = st.secrets["google_credentials"]
+        # Lo trasformiamo in dizionario Python
+        creds_dict = json.loads(raw_text, strict=False)
+        
+        # L'IGIENIZZATORE: Se ci sono problemi con gli a capo, li ripariamo a forza!
+        if "private_key" in creds_dict:
+            chiave = creds_dict["private_key"]
+            chiave = chiave.replace("\\n", "\n").replace("\\\\n", "\n")
+            creds_dict["private_key"] = chiave
+            
+        return gspread.service_account_from_dict(creds_dict)
     else:
         return gspread.service_account(filename='credentials.json')
 

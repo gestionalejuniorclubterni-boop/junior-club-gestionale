@@ -7,7 +7,6 @@ from num2words import num2words
 import requests
 import base64
 import re
-import json
 import os
 
 # ==========================================
@@ -25,13 +24,16 @@ st.components.v1.html("""
 """, height=0, width=0)
 
 # ==========================================
-# FUNZIONE DEL FILE FANTASMA (INFALLIBILE AL 100%)
+# FUNZIONE IMBATTIBILE PER GOOGLE DRIVE (NIENTE JSON)
 # ==========================================
 def get_gspread_client():
-    if "google_json" in st.secrets:
-        with open("temp_credentials.json", "w", encoding="utf-8") as f:
-            f.write(st.secrets["google_json"])
-        return gspread.service_account(filename="temp_credentials.json")
+    if "gcp_service_account" in st.secrets:
+        # Prende direttamente il dizionario dai Secrets
+        creds_dict = dict(st.secrets["gcp_service_account"])
+        # Sistema la password lunghissima in modo che Google non la rifiuti
+        if "\\n" in creds_dict["private_key"]:
+            creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+        return gspread.service_account_from_dict(creds_dict)
     else:
         return gspread.service_account(filename='credentials.json')
 
@@ -56,7 +58,7 @@ if not st.session_state["authenticated"]:
     [data-testid="stForm"] div[data-baseweb="input"]:focus-within { border-color: #FF6501 !important; box-shadow: 0 0 0 4px rgba(255, 101, 1, 0.15) !important; background-color: #FFFFFF !important; }
     [data-testid="stForm"] input { text-align: center !important; font-size: 22px !important; letter-spacing: 4px; padding: 15px !important; font-weight: 700 !important; color: #0F172A !important; }
     
-    /* RIMOZIONE DELLA SCRITTA "PRESS ENTER TO SUBMIT" CHE SI SOVRAPPONEVA */
+    /* RIMOZIONE DELLA SCRITTA CHE SI SOVRAPPONEVA */
     div[data-testid="InputInstructions"] { display: none !important; }
     .st-emotion-cache-12w0qpk { display: none !important; }
     

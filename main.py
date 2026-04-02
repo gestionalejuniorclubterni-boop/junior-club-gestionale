@@ -24,11 +24,14 @@ st.components.v1.html("""
 """, height=0, width=0)
 
 # ==========================================
-# FUNZIONE INTELLIGENTE PER GOOGLE DRIVE
+# FUNZIONE INTELLIGENTE PER GOOGLE DRIVE (RIPARATA)
 # ==========================================
 def get_gspread_client():
     if "google_credentials" in st.secrets:
-        creds_dict = json.loads(st.secrets["google_credentials"])
+        creds_dict = json.loads(st.secrets["google_credentials"], strict=False)
+        # IL TRUCCO MAGICO: Ripara gli "a capo" rotti da Streamlit
+        if "\\n" in creds_dict.get("private_key", ""):
+            creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
         return gspread.service_account_from_dict(creds_dict)
     else:
         return gspread.service_account(filename='credentials.json')

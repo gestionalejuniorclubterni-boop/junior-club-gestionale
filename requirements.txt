@@ -1,3 +1,6 @@
-nicegui
-fpdf
+streamlit
 pandas
+fpdf
+gspread
+num2words
+requests

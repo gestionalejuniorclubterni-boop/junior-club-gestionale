@@ -7,7 +7,6 @@ from num2words import num2words
 import requests
 import base64
 import re
-import json
 
 # ==========================================
 # 1. CONFIGURAZIONE PAGINA E COLLEGAMENTO
@@ -24,21 +23,14 @@ st.components.v1.html("""
 """, height=0, width=0)
 
 # ==========================================
-# FUNZIONE INFALLIBILE PER GOOGLE DRIVE (IL BAZOOKA)
+# FUNZIONE INFALLIBILE PER GOOGLE DRIVE (METODO TOML)
 # ==========================================
 def get_gspread_client():
-    if "google_credentials" in st.secrets:
-        # Leggiamo il testo dai Secrets
-        raw_text = st.secrets["google_credentials"]
-        # Lo trasformiamo in dizionario Python
-        creds_dict = json.loads(raw_text, strict=False)
-        
-        # L'IGIENIZZATORE: Se ci sono problemi con gli a capo, li ripariamo a forza!
-        if "private_key" in creds_dict:
-            chiave = creds_dict["private_key"]
-            chiave = chiave.replace("\\n", "\n").replace("\\\\n", "\n")
-            creds_dict["private_key"] = chiave
-            
+    if "gcp_service_account" in st.secrets:
+        # Prende direttamente i segreti di Streamlit e li trasforma in un dizionario! Niente JSON!
+        creds_dict = dict(st.secrets["gcp_service_account"])
+        # Ultima sicurezza per le chiavi: forza la correzione degli a capo
+        creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
         return gspread.service_account_from_dict(creds_dict)
     else:
         return gspread.service_account(filename='credentials.json')

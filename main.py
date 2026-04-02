@@ -12,7 +12,7 @@ import re
 # 1. CONFIGURAZIONE PAGINA E COLLEGAMENTO
 # ==========================================
 st.set_page_config(page_title="Junior Club Terni", layout="wide", initial_sidebar_state="expanded")
-URL_WEB_APP = "https://script.google.com/macros/s/AKfycbzzfiXAW9LspCVAKQNIMuV5Xjps7Lxg4dR4MHXGAZdDlf1YBihvy_-HffsfStuILBiO/exec"
+URL_WEB_APP = "https://script.google.com/macros/s/AKfycbwP8if8l0wZ6OuhQxnPVsLu33F23RzLYp7LsKrnbB8WXhEYkh3Wjx63JeFmyVKDOr4/exec"
 
 st.components.v1.html("""
     <script>

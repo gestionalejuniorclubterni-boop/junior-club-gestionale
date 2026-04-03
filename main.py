@@ -7,8 +7,6 @@ from num2words import num2words
 import requests
 import base64
 import re
-import json
-import os
 
 # ==========================================
 # 1. CONFIGURAZIONE PAGINA E COLLEGAMENTO
@@ -25,18 +23,21 @@ st.components.v1.html("""
 """, height=0, width=0)
 
 # ==========================================
-# FUNZIONE DEL FILE FANTASMA (INFALLIBILE AL 100%)
+# FUNZIONE IMBATTIBILE PER GOOGLE DRIVE (METODO TOML)
 # ==========================================
 def get_gspread_client():
-    if "google_json" in st.secrets:
-        with open("temp_credentials.json", "w", encoding="utf-8") as f:
-            f.write(st.secrets["google_json"])
-        return gspread.service_account(filename="temp_credentials.json")
+    if "gcp_service_account" in st.secrets:
+        # Prende direttamente i segreti di Streamlit in formato dizionario
+        creds_dict = dict(st.secrets["gcp_service_account"])
+        # Ultima sicurezza per le chiavi nel caso Streamlit modifichi gli a capo
+        if "private_key" in creds_dict and "\\n" in creds_dict["private_key"]:
+            creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+        return gspread.service_account_from_dict(creds_dict)
     else:
         return gspread.service_account(filename='credentials.json')
 
 # ==========================================
-# 1.5 SISTEMA DI LOGIN
+# 1.5 SISTEMA DI LOGIN (DESIGN PREMIUM & PULITO)
 # ==========================================
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
@@ -48,12 +49,18 @@ if not st.session_state["authenticated"]:
     [data-testid="stHeader"] { display: none !important; }
     .login-title { color: #0F172A; font-size: 38px; font-weight: 900; letter-spacing: -1.5px; margin-bottom: 5px; text-align: center; font-family: 'Inter', sans-serif;}
     .login-subtitle { color: #FF6501; font-size: 14px; font-weight: 800; text-align: center; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px;}
+    
     [data-testid="stForm"] { background-color: #FFFFFF !important; border-radius: 24px !important; border: 1px solid #E2E8F0 !important; border-top: 8px solid #FF6501 !important; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.08) !important; padding: 40px 30px !important; }
+    
+    /* SISTEMAZIONE CAMPO PASSWORD E OCCHIO */
     [data-testid="stForm"] div[data-baseweb="input"] { border-radius: 12px !important; border: 2px solid #E2E8F0 !important; background-color: #F8FAFC !important; transition: all 0.2s ease; padding-right: 10px !important; }
     [data-testid="stForm"] div[data-baseweb="input"]:focus-within { border-color: #FF6501 !important; box-shadow: 0 0 0 4px rgba(255, 101, 1, 0.15) !important; background-color: #FFFFFF !important; }
     [data-testid="stForm"] input { text-align: center !important; font-size: 22px !important; letter-spacing: 4px; padding: 15px !important; font-weight: 700 !important; color: #0F172A !important; }
+    
+    /* RIMOZIONE DELLA SCRITTA CHE SI SOVRAPPONEVA */
     div[data-testid="InputInstructions"] { display: none !important; }
     .st-emotion-cache-12w0qpk { display: none !important; }
+    
     [data-testid="stFormSubmitButton"] button { background: linear-gradient(135deg, #FF6501 0%, #E65A00 100%) !important; color: white !important; border: none !important; border-radius: 12px !important; padding: 12px !important; font-size: 18px !important; font-weight: 900 !important; margin-top: 15px !important; box-shadow: 0 8px 20px -5px rgba(255, 101, 1, 0.4) !important; transition: all 0.3s ease !important; width: 100%;}
     [data-testid="stFormSubmitButton"] button:hover { transform: translateY(-3px); box-shadow: 0 15px 30px -5px rgba(255, 101, 1, 0.5) !important; }
     </style>
@@ -144,7 +151,7 @@ else:
     st.markdown("<div translate='no' class='titolo-app notranslate'>Storico Pagamenti</div><div translate='no' class='sottotitolo notranslate'>Reportistica e riepilogo incassi</div>", unsafe_allow_html=True)
 
 # ==========================================
-# FUNZIONI DI GESTIONE E DATABASE (PULITE DAI FANTASMI)
+# FUNZIONI DI GESTIONE E DATABASE
 # ==========================================
 @st.cache_data(ttl=3600, show_spinner="Sincronizzazione dal Cloud in corso... ⚡")
 def carica_fogli_google():
@@ -160,6 +167,7 @@ def carica_fogli_google():
             df_s = pd.DataFrame(d_s[1:], columns=[str(c).strip().upper() for c in d_s[0]])
             df_s = df_s.loc[:, ~df_s.columns.duplicated()]
             df_s = df_s.loc[:, df_s.columns != '']
+            # Filtro per righe fantasma anagrafica
             if 'NOME' in df_s.columns:
                 df_s = df_s[df_s['NOME'].astype(str).str.strip() != '']
             
@@ -169,6 +177,7 @@ def carica_fogli_google():
             df_h = pd.DataFrame(d_h[1:], columns=[str(c).strip().upper() for c in d_h[0]])
             df_h = df_h.loc[:, ~df_h.columns.duplicated()]
             df_h = df_h.loc[:, df_h.columns != '']
+            # Filtro per righe fantasma storico
             if 'NUMERO' in df_h.columns:
                 df_h = df_h[df_h['NUMERO'].astype(str).str.strip() != '']
             

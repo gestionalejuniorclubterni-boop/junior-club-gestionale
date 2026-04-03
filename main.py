@@ -24,7 +24,7 @@ st.components.v1.html("""
 """, height=0, width=0)
 
 # ==========================================
-# FUNZIONE IMBATTIBILE PER GOOGLE DRIVE (ADATTATORE UNIVERSALE)
+# FUNZIONE IMBATTIBILE PER GOOGLE DRIVE 
 # ==========================================
 def get_gspread_client():
     if "gcp_service_account" in st.secrets:
@@ -32,16 +32,11 @@ def get_gspread_client():
         if "private_key" in creds_dict and "\\n" in creds_dict["private_key"]:
             creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
         return gspread.service_account_from_dict(creds_dict)
-    elif "google_json" in st.secrets:
-        creds_dict = json.loads(st.secrets["google_json"], strict=False)
-        if "private_key" in creds_dict and "\\n" in creds_dict["private_key"]:
-            creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-        return gspread.service_account_from_dict(creds_dict)
     else:
         return gspread.service_account(filename='credentials.json')
 
 # ==========================================
-# 1.5 SISTEMA DI LOGIN (DESIGN PREMIUM)
+# 1.5 SISTEMA DI LOGIN (DESIGN PREMIUM & PULITO)
 # ==========================================
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
@@ -379,7 +374,8 @@ if menu == "📝 Emissione Ricevuta":
                 try:
                     gc = get_gspread_client()
                     sh = gc.open("Database_Junior_Club")
-                    sh.worksheet("storico").append_row([dt, str(n_ric), tipo_key, str(val), pag.upper(), cf_p.upper(), cau.upper(), atl_n.upper(), atl_na.upper(), atl_in.upper(), firm, email_invio, link_d])
+                    # ISTRUZIONE FORZATA: Incolla partendo dalla cella A1, impedendo a Google di sbagliare
+                    sh.worksheet("storico").append_row([dt, str(n_ric), tipo_key, str(val), pag.upper(), cf_p.upper(), cau.upper(), atl_n.upper(), atl_na.upper(), atl_in.upper(), firm, email_invio, link_d], table_range="A1")
                     st.success("Operazione completata con successo! Ricevuta salvata.")
                     st.cache_data.clear() 
                     
@@ -412,7 +408,7 @@ elif menu == "👥 Anagrafica Clienti":
                 try:
                     gc = get_gspread_client()
                     sh = gc.open("Database_Junior_Club")
-                    sh.worksheet("soci").append_row([n.upper(), nas.upper(), ind.upper(), gen.upper(), cf.upper(), ema.lower()])
+                    sh.worksheet("soci").append_row([n.upper(), nas.upper(), ind.upper(), gen.upper(), cf.upper(), ema.lower()], table_range="A1")
                     st.success("Socio aggiunto correttamente!")
                     st.cache_data.clear()
                 except Exception as e: st.error(f"Errore: {e}")

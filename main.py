@@ -7,6 +7,7 @@ from num2words import num2words
 import requests
 import base64
 import re
+import json
 
 # ==========================================
 # 1. CONFIGURAZIONE PAGINA E COLLEGAMENTO
@@ -23,13 +24,16 @@ st.components.v1.html("""
 """, height=0, width=0)
 
 # ==========================================
-# FUNZIONE IMBATTIBILE PER GOOGLE DRIVE (METODO TOML)
+# FUNZIONE IMBATTIBILE PER GOOGLE DRIVE (ADATTATORE UNIVERSALE)
 # ==========================================
 def get_gspread_client():
     if "gcp_service_account" in st.secrets:
-        # Prende direttamente i segreti di Streamlit in formato dizionario
         creds_dict = dict(st.secrets["gcp_service_account"])
-        # Ultima sicurezza per le chiavi nel caso Streamlit modifichi gli a capo
+        if "private_key" in creds_dict and "\\n" in creds_dict["private_key"]:
+            creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+        return gspread.service_account_from_dict(creds_dict)
+    elif "google_json" in st.secrets:
+        creds_dict = json.loads(st.secrets["google_json"], strict=False)
         if "private_key" in creds_dict and "\\n" in creds_dict["private_key"]:
             creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
         return gspread.service_account_from_dict(creds_dict)
@@ -37,7 +41,7 @@ def get_gspread_client():
         return gspread.service_account(filename='credentials.json')
 
 # ==========================================
-# 1.5 SISTEMA DI LOGIN (DESIGN PREMIUM & PULITO)
+# 1.5 SISTEMA DI LOGIN (DESIGN PREMIUM)
 # ==========================================
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
@@ -52,12 +56,10 @@ if not st.session_state["authenticated"]:
     
     [data-testid="stForm"] { background-color: #FFFFFF !important; border-radius: 24px !important; border: 1px solid #E2E8F0 !important; border-top: 8px solid #FF6501 !important; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.08) !important; padding: 40px 30px !important; }
     
-    /* SISTEMAZIONE CAMPO PASSWORD E OCCHIO */
     [data-testid="stForm"] div[data-baseweb="input"] { border-radius: 12px !important; border: 2px solid #E2E8F0 !important; background-color: #F8FAFC !important; transition: all 0.2s ease; padding-right: 10px !important; }
     [data-testid="stForm"] div[data-baseweb="input"]:focus-within { border-color: #FF6501 !important; box-shadow: 0 0 0 4px rgba(255, 101, 1, 0.15) !important; background-color: #FFFFFF !important; }
     [data-testid="stForm"] input { text-align: center !important; font-size: 22px !important; letter-spacing: 4px; padding: 15px !important; font-weight: 700 !important; color: #0F172A !important; }
     
-    /* RIMOZIONE DELLA SCRITTA CHE SI SOVRAPPONEVA */
     div[data-testid="InputInstructions"] { display: none !important; }
     .st-emotion-cache-12w0qpk { display: none !important; }
     
@@ -167,8 +169,13 @@ def carica_fogli_google():
             df_s = pd.DataFrame(d_s[1:], columns=[str(c).strip().upper() for c in d_s[0]])
             df_s = df_s.loc[:, ~df_s.columns.duplicated()]
             df_s = df_s.loc[:, df_s.columns != '']
-            # Filtro per righe fantasma anagrafica
-            if 'NOME' in df_s.columns:
+            
+            # FILTRO INTELLIGENTE: tiene la riga se c'è ALMENO il NOME o il GENITORE
+            if 'NOME' in df_s.columns and 'GENITORE' in df_s.columns:
+                m_nome = df_s['NOME'].astype(str).str.strip() != ''
+                m_gen = df_s['GENITORE'].astype(str).str.strip() != ''
+                df_s = df_s[m_nome | m_gen]
+            elif 'NOME' in df_s.columns:
                 df_s = df_s[df_s['NOME'].astype(str).str.strip() != '']
             
         ws_storico = sh.worksheet("storico")
